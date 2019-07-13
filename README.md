@@ -1,6 +1,11 @@
 # fempy
 A simple Python-based Finite Element Method Library.
 
+## Schedule
+
+* 2019.07.12 getting start
+* 2019.07.13 Finished a simple 1-D Finity Element Method 
+
 ## Getting start
 
 ### prerequisites
@@ -25,7 +30,7 @@ at the root folder.
 ### 1-D simple equation
 
 $$\begin{cases}
--u''=\pi^2\sin(\pi x)
+-u''=\pi^2\sin(\pi x) \\
 u(0)=0, u(1)=0
 \end{cases}$$
 
