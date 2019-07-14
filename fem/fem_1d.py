@@ -8,7 +8,7 @@
 
 import numpy as np
 from scipy.integrate import quad
-from scipy.linalg import solve
+from fem.basic import fslove
 
 
 def phi_l(l, r):
@@ -91,17 +91,6 @@ def inner_product(f0, f1, a, b):
     """
     inner_solve = quad(lambda x: f0(x) * f1(x), a, b)
     return inner_solve[0]
-
-
-def fslove(a_mat, f_lst):
-    """
-    求解线性方程组 $AU=F$
-
-    :param a_mat:
-    :param f_lst:
-    :return:
-    """
-    return solve(a_mat, f_lst)
 
 
 def construct_cor(domain, opt):
