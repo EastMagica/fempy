@@ -20,9 +20,9 @@ fem.run()
 
 
 u_lst = fem.u_lst
-u_true = np.sin(np.pi * fem.x_lst)
+u_true = np.sin(np.pi * fem.p_mat)
 u_error = u_lst - u_true
-u_error_l2 = error_l2(fem.u_lst, lambda x: np.sin(np.pi * x), fem.x_lst, fem.e_mat)
+u_error_l2 = error_l2(fem.u_lst, lambda x: np.sin(np.pi * x), fem.p_mat, fem.e_mat)
 
 
 print('u_lst:\n', u_lst)
@@ -36,9 +36,9 @@ fig = plt.figure(figsize=(12, 5))
 ax0 = plt.subplot(1, 2, 1)
 plt.title('u(x)')
 plt.plot(np.linspace(0, 1, 100), np.sin(np.pi * np.linspace(0, 1, 100)), color='b', linestyle='-')
-plt.plot(fem.x_lst, fem.u_lst, color='r', linestyle='--')
+plt.plot(fem.p_mat, fem.u_lst, color='r', linestyle='--')
 ax1 = plt.subplot(1, 2, 2)
 plt.title('error')
-plt.plot(fem.x_lst, np.sin(np.pi * fem.x_lst) - fem.u_lst)
+plt.plot(fem.p_mat, np.sin(np.pi * fem.p_mat) - fem.u_lst)
 plt.tight_layout()
 plt.show()

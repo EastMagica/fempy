@@ -24,6 +24,6 @@ class Test(unittest.TestCase):
         pass
 
     def test_inner_product(self):
-        result0 = fem1d.inner_product(lambda x: x, lambda x: sp.sin(x), 0, 1)
+        result0 = fem1d.inner_product_1d(lambda x: x, lambda x: sp.sin(x), 0, 1)
         result1 = quad(lambda x: x * sp.sin(x), 0, 1)
         self.assertEqual(result0, result1, 'Test inner_product fail')

@@ -2,7 +2,7 @@
 # -*- coding:utf-8 -*-
 # @author  : East
 # @time    : 2019/7/12 17:04
-# @file    : fem_1d.py
+# @file    : fem/fem1d/fem_1d.py
 # @project : fem
 # software : PyCharm
 
@@ -66,19 +66,19 @@ def _interval_split(domain, opt):
     :return:
     """
     if opt[0] == 'step':
-        x_lst = np.linspace(domain[0], domain[1], opt[1] + 1)
+        p_mat = np.linspace(domain[0], domain[1], opt[1] + 1)
     elif opt[0] == 'h':
-        x_lst = np.arange(domain[0], domain[1], opt[1])
+        p_mat = np.arange(domain[0], domain[1], opt[1])
     elif opt[0] == 'f':
-        x_lst = opt[1](domain)
+        p_mat = opt[1](domain)
     elif opt[0] == 'lst':
-        x_lst = np.array(opt[1])
+        p_mat = np.array(opt[1])
     else:
         raise ValueError
-    return x_lst
+    return p_mat
 
 
-def inner_product(f0, f1, a, b):
+def inner_product_1d(f0, f1, a, b):
     """
     计算两函数的内积
     $$\int^b_a f_1(x)f_2(x) \mathrm{d}x$$
@@ -97,20 +97,20 @@ def construct_cor(domain, opt):
     """
     构造坐标矩阵、位置矩阵
 
-    :return x_lst:
+    :return p_mat:
     :return e_mat:
     """
-    x_lst = _interval_split(domain, opt)
-    n = len(x_lst)
+    p_mat = _interval_split(domain, opt)
+    n = len(p_mat)
     e_mat = np.transpose(np.vstack((np.arange(0, n - 1), np.arange(1, n))))
-    return x_lst, e_mat, n
+    return p_mat, e_mat, n
 
 
-def error_l2(u_lst, u_true, x_lst, e_mat):
+def error_l2(u_lst, u_true, p_mat, e_mat):
     e2 = 0
     for k, v in enumerate(e_mat):
         l_inx, r_inx = v
-        l_cor, r_cor = x_lst[[l_inx, r_inx]]
+        l_cor, r_cor = p_mat[[l_inx, r_inx]]
         e2 += quad(lambda x: (u_true(x) - u_lst[l_inx] * phi_l(l_cor, r_cor)(x)
                               - u_lst[r_inx] * phi_r(l_cor, r_cor)(x)) ** 2, l_cor, r_cor)[0]
     return np.sqrt(e2)
@@ -120,11 +120,11 @@ class FEM1D(object):
     def __init__(self, eq):
         self.f = eq['f']
         self.bnd = eq['bnd']
-        self.x_lst, self.e_mat, self.n = construct_cor(eq['domain'], eq['split'])
+        self.p_mat, self.e_mat, self.n = construct_cor(eq['domain'], eq['split'])
         self.a_mat = np.zeros((self.n, self.n))
         self.f_lst = np.zeros(self.n)
         self.u_lst = np.zeros(self.n)
-        print(self.x_lst, '\n', self.e_mat)
+        print(self.p_mat, '\n', self.e_mat)
 
     def assembly_f(self):
         """
@@ -132,9 +132,9 @@ class FEM1D(object):
         """
         for k, v in enumerate(self.e_mat):
             l_inx, r_inx = v
-            l_cor, r_cor = self.x_lst[[l_inx, r_inx]]
-            self.f_lst[l_inx] += inner_product(self.f, phi_l(l_cor, r_cor), l_cor, r_cor)
-            self.f_lst[r_inx] += inner_product(self.f, phi_r(l_cor, r_cor), l_cor, r_cor)
+            l_cor, r_cor = self.p_mat[[l_inx, r_inx]]
+            self.f_lst[l_inx] += inner_product_1d(self.f, phi_l(l_cor, r_cor), l_cor, r_cor)
+            self.f_lst[r_inx] += inner_product_1d(self.f, phi_r(l_cor, r_cor), l_cor, r_cor)
 
     def assembly_a(self):
         """
@@ -142,16 +142,16 @@ class FEM1D(object):
         """
         for k, v in enumerate(self.e_mat):
             l_inx, r_inx = v
-            l_cor, r_cor = self.x_lst[[l_inx, r_inx]]
+            l_cor, r_cor = self.p_mat[[l_inx, r_inx]]
             # TODO: package other forms function
-            self.a_mat[l_inx][l_inx] += inner_product(phi_l_d1(l_cor, r_cor),
-                                                      phi_l_d1(l_cor, r_cor), l_cor, r_cor)
-            self.a_mat[l_inx][r_inx] += inner_product(phi_r_d1(l_cor, r_cor),
-                                                      phi_l_d1(l_cor, r_cor), l_cor, r_cor)
-            self.a_mat[r_inx][l_inx] += inner_product(phi_l_d1(l_cor, r_cor),
-                                                      phi_r_d1(l_cor, r_cor), l_cor, r_cor)
-            self.a_mat[r_inx][r_inx] += inner_product(phi_r_d1(l_cor, r_cor),
-                                                      phi_r_d1(l_cor, r_cor), l_cor, r_cor)
+            self.a_mat[l_inx][l_inx] += inner_product_1d(phi_l_d1(l_cor, r_cor),
+                                                         phi_l_d1(l_cor, r_cor), l_cor, r_cor)
+            self.a_mat[l_inx][r_inx] += inner_product_1d(phi_r_d1(l_cor, r_cor),
+                                                         phi_l_d1(l_cor, r_cor), l_cor, r_cor)
+            self.a_mat[r_inx][l_inx] += inner_product_1d(phi_l_d1(l_cor, r_cor),
+                                                         phi_r_d1(l_cor, r_cor), l_cor, r_cor)
+            self.a_mat[r_inx][r_inx] += inner_product_1d(phi_r_d1(l_cor, r_cor),
+                                                         phi_r_d1(l_cor, r_cor), l_cor, r_cor)
 
     def singular_condition(self):
         """
