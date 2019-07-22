@@ -2,16 +2,16 @@
 # -*- coding:utf-8 -*-
 # @author  : East
 # @time    : 2019/7/14 18:00
-# @file    : fem/fem2d/fem_2d.py
-# @project : fem
+# @file    : fempy/fem2d/fem_2d.py
+# @project : fempy
 # software : PyCharm
 
 import numpy as np
 from scipy.integrate import quad, dblquad
 from itertools import product as prod
-from fem.basic import fslove
-from fem.fem2d.mesh_2d import Mesh2D
-from fem.fem2d.basic import *
+from fempy.basic import fslove
+from fempy.fem2d.mesh_2d import Mesh2D
+from fempy.fem2d.basic import *
 
 
 def inner_product_2d(f, a0, b0, a1, b1):
@@ -88,9 +88,9 @@ class FEM2D(object):
         Assembly matrix A and F by Gauss Points.
         :return:
         """
-        for k, v in enumerate(self.mesh.u_mat):
+        for k, v in enumerate(self.mesh.triangles):
             # constructing temporary matrix b and f
-            b_mat, f_mat = self.construct_af(self.mesh.p_mat[v])
+            b_mat, f_mat = self.construct_af(self.mesh.points[v])
             # assembly matrix F
             self.f_lst[v] += f_mat
             # assembly matrix A
@@ -120,6 +120,10 @@ class FEM2D(object):
         return a_mat, f_lst
 
     def singular_condition(self):
+        """
+        Applying boundary conditions
+        :return:
+        """
         for k, v in enumerate(self.mesh.p_bnd):
             if v:
                 self.f_lst[k] = 0
@@ -148,3 +152,5 @@ class FEM2D(object):
         self.singular_condition()
         print("> Solve Matrix U...")
         self.u_lst = fslove(self.a_mat, self.f_lst)
+
+

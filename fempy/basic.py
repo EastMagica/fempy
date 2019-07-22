@@ -2,8 +2,8 @@
 # -*- coding:utf-8 -*-
 # @author  : East
 # @time    : 2019/7/14 18:01
-# @file    : fem/basic.py
-# @project : fem
+# @file    : fempy/basic.py
+# @project : fempy
 # software : PyCharm
 
 from scipy.linalg import solve

@@ -3,26 +3,26 @@
 # @author  : East
 # @time    : 2019/7/12 17:45
 # @file    : main.py
-# @project : fem
+# @project : fempy
 # software : PyCharm
 
 import numpy as np
 import matplotlib.pyplot as plt
-from fem.fem_1d import FEM1D, error_l2
+from fempy.fem1d import FEM1D, Mesh1D, Adaptive1D
 
 
 eq = {'bnd': np.array([0, 0]),
-      'f': lambda x: np.pi**2 * np.sin(np.pi * x),
-      'domain': np.array([0, 1]), 'split': ['step', 8]}
+      'f': lambda x: np.pi**2 * np.sin(np.pi * x)}
 
-fem = FEM1D(eq)
+mesh = Mesh1D({'domain': np.array([0, 1]), 'opt': ['step', 8]})
+
+fem = FEM1D(eq, mesh)
 fem.run()
-
 
 u_lst = fem.u_lst
 u_true = np.sin(np.pi * fem.p_mat)
 u_error = u_lst - u_true
-u_error_l2 = error_l2(fem.u_lst, lambda x: np.sin(np.pi * x), fem.p_mat, fem.e_mat)
+u_error_l2 = fem.error_l2(lambda x: np.sin(np.pi * x))
 
 
 print('u_lst:\n', u_lst)

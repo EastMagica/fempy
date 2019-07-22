@@ -3,7 +3,7 @@
 # @author  : East
 # @time    : 2019/7/18 19:17
 # @file    : gauss.py
-# @project : fem
+# @project : fempy
 # software : PyCharm
 
 import numpy as np

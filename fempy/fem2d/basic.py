@@ -2,8 +2,8 @@
 # -*- coding:utf-8 -*-
 # @author  : East
 # @time    : 2019/7/18 10:57
-# @file    : fem/fem2d/basic.py
-# @project : fem
+# @file    : fempy/fem2d/basic.py
+# @project : fempy
 # software : PyCharm
 
 import os

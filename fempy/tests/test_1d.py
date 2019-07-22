@@ -3,7 +3,7 @@
 # @author  : East
 # @time    : 2019/7/12 17:49
 # @file    : test_1d.py
-# @project : fem
+# @project : fempy
 # software : PyCharm
 
 import unittest
@@ -13,7 +13,7 @@ import scipy as sp
 
 from scipy.integrate import quad
 
-import fem.fem_1d as fem1d
+import fempy.fem_1d as fem1d
 
 
 class Test(unittest.TestCase):

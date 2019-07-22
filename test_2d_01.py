@@ -3,12 +3,12 @@
 # @author  : East
 # @time    : 2019/7/14 18:03
 # @file    : test_2d_01.py
-# @project : fem
+# @project : fempy
 # software : PyCharm
 
 import numpy as np
 import matplotlib.pyplot as plt
-from fem.fem2d import FEM2D, Mesh2D, plot_tri
+from fempy.fem2d import FEM2D, Mesh2D, plot_tri
 
 
 eq = {'f': lambda x, y: 2 * np.pi**2 * np.sin(np.pi * x) * np.sin(np.pi * y),
