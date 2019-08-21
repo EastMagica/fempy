@@ -10,10 +10,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from fempy.fem1d import FEM1D, Mesh1D, Adaptive1D
 
-mesh = Mesh1D({'domain': np.array([-5, 5]), 'opt': ['step', 4]})
-eq = {'bnd': np.array([np.e ** (-5**2), np.e ** (-5**2)]),
-      'f': lambda x: (2 - 4 * x**2) * np.e ** (-x**2),
-      'u_true': lambda x: np.e ** (-x**2)}
+# mesh = Mesh1D({'domain': np.array([-5, 5]), 'opt': ['step', 4]})
+# eq = {'bnd': np.array([np.e ** (-5**2), np.e ** (-5**2)]),
+#       'f': lambda x: (2 - 4 * x**2) * np.e ** (-x**2),
+#       'u_true': lambda x: np.e ** (-x**2)}
 
 # mesh = Mesh1D({'domain': np.array([-1.5, 1.5]), 'opt': ['step', 4]})
 # eq = {'bnd': np.array([np.e ** (-16 * 1.5**2), np.e ** (-16 * 1.5**2)]),
@@ -24,6 +24,11 @@ eq = {'bnd': np.array([np.e ** (-5**2), np.e ** (-5**2)]),
 # eq = {'bnd': np.array([0, 0]),
 #       'f': lambda x: 12 * x**2 - 4,
 #       'u_true': lambda x: 2 * x**2 - x**4}
+
+mesh = Mesh1D({'domain': np.array([-1, 1]), 'opt': ['step', 4]})
+eq = {'bnd': np.array([0, 0]),
+      'f': lambda x: np.e**(-np.sin(x)**2),
+      'u_true': lambda x: np.e ** (-x**2)}
 
 ada = Adaptive1D(eq, mesh)
 ada.fem_iter(5)

@@ -34,7 +34,7 @@ def __jacobian(p, q):
     """
     return area(p[0], p[1], p[2]) / area(q[0], q[1], q[2])
 
-
+# pnt, point, guass_point
 def affine_tri(space_s, space_e, point_s):
     """
 

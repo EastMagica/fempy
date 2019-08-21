@@ -15,8 +15,8 @@ def plot_1d(u_lst, mesh, u_true, title):
     fig = plt.figure(figsize=(12, 5))
     ax0 = plt.subplot(1, 2, 1)
     ax0.set_title('u(x)')
-    ax0.plot(np.linspace(mesh.p_mat[mesh.p_end][0], mesh.p_mat[mesh.p_end][1], 500),
-             u_true(np.linspace(mesh.p_mat[mesh.p_end][0], mesh.p_mat[mesh.p_end][1], 500)), color='b', linestyle='-')
+    # ax0.plot(np.linspace(mesh.p_mat[mesh.p_end][0], mesh.p_mat[mesh.p_end][1], 500),
+    #          u_true(np.linspace(mesh.p_mat[mesh.p_end][0], mesh.p_mat[mesh.p_end][1], 500)), color='b', linestyle='-')
     ax0.plot(np.sort(mesh.p_mat), u_lst[np.argsort(mesh.p_mat)], color='r', linestyle='--')
     ax0.scatter(mesh.p_mat, u_lst, color='black')
     # ax0.set_xticks(np.sort(mesh.p_mat))

@@ -152,15 +152,15 @@ class Adaptive1D(object):
         self.mesh = mesh
         print('> points:', self.mesh.p_mat)
         print('> edges:', self.mesh.e_mat)
-        print('> u_h:', self.fem.u_lst)
         self.fem = FEM1D(eq, mesh)
         self.fem.run()
         print('> u_h:', self.fem.u_lst)
-        print('> el2:', self.fem.error_l2(self.eq['u_true']))
+        # print('> el2:', self.fem.error_l2(self.eq['u_true']))
         plot_1d(self.fem.u_lst, self.mesh, self.eq['u_true'], 'start plot')
 
     def fem_iter(self, n=1):
         for i in range(n):
+            print(f"\n\n{'-'*32}\n> {i+1}'st Split\n{'-'*32}")
             eta_h = self.estimate_error()
             self.adaptive_mesh(eta_h)
             print('> points:', self.mesh.p_mat)
@@ -168,7 +168,7 @@ class Adaptive1D(object):
             self.fem = FEM1D(self.eq, self.mesh)
             self.fem.run()
             print('> u_h:', self.fem.u_lst)
-            print('> el2:', self.fem.error_l2(self.eq['u_true']))
+            # print('> el2:', self.fem.error_l2(self.eq['u_true']))
             plot_1d(self.fem.u_lst, self.mesh, self.eq['u_true'], str(i+1)+"'st Split")
 
     def estimate_error(self):
@@ -185,12 +185,7 @@ class Adaptive1D(object):
         lst = np.zeros((self.mesh.e_n + len(eta_num), 2), dtype=np.int)
         print('> eta_num:', eta_num)
         self.mesh.p_mat = np.append(self.mesh.p_mat, np.sum(self.mesh.p_mat[self.mesh.e_mat[eta_num]], axis=1)/2)
-        # for k, v in enumerate(eta_num):
-        #     lst.append([k + self.mesh.p_n, self.mesh.e_mat[v, 1]])
-        #     self.mesh.e_mat[v, 1] = k + self.mesh.p_n
-        # self.mesh.e_mat = np.vstack((self.mesh.e_mat, lst))
         for k in range(self.mesh.e_n):
-            print(k, inx)
             lst[k+inx, 0] = self.mesh.e_mat[k, 0]
             if k in eta_num:
                 lst[k+inx, 1] = self.mesh.p_n + inx

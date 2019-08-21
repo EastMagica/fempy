@@ -14,7 +14,7 @@ from fempy.fem1d import FEM1D, Mesh1D, Adaptive1D
 eq = {'bnd': np.array([0, 0]),
       'f': lambda x: np.pi**2 * np.sin(np.pi * x)}
 
-mesh = Mesh1D({'domain': np.array([0, 1]), 'opt': ['step', 8]})
+mesh = Mesh1D({'domain': np.array([0, 1]), 'opt': ['step', 4]})
 
 fem = FEM1D(eq, mesh)
 fem.run()
