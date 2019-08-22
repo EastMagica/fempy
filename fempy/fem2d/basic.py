@@ -43,12 +43,18 @@ def affine_tri(space_s, space_e, point_s):
     :param point_s: Point in Start Affine Space
     :return point_e: Point in Ended Affine Space
     """
-    area_s = area(space_s[0], space_s[1], space_s[2])
-    lambda_se = np.array([area(point_s, space_s[1], space_s[2]),
-                          area(point_s, space_s[2], space_s[0]),
-                          area(point_s, space_s[0], space_s[1])]) / area_s
-    point_e = np.dot(lambda_se.T, space_e)
-    return point_e
+    # area_s = area(space_s[0], space_s[1], space_s[2])
+    # lambda_se = np.array([area(point_s, space_s[1], space_s[2]),
+    #                       area(point_s, space_s[2], space_s[0]),
+    #                       area(point_s, space_s[0], space_s[1])]) / area_s
+    # print('lambda_se:\n', lambda_se, '\nspace_e:\n', space_e)
+    # point_e = np.dot(lambda_se.T, space_e)
+    lambda_gauss = np.zeros((3, 3))
+    lambda_gauss[:, :2] = point_s
+    lambda_gauss[:, 2] = 1 - point_s[:, 0] - point_s[:, 1]
+    point_e = np.dot(lambda_gauss, space_e)
+    print('space_e:\n', space_e, '\npoint_s:\n', point_s, '\nlambda_gauss:\n', lambda_gauss, '\npoint_e:\n', point_e, '\n--------------')
+    return point_e  
 
 
 def local_to_global(local_p, global_v):
