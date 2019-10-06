@@ -6,5 +6,5 @@
 # @project : fempy
 # software : PyCharm
 
-from fempy.fem1d.fem_1d import *
-from fempy.fem1d.mesh_1d import *
+from .basic import *
+from .fem1d import *

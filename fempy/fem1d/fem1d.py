@@ -2,68 +2,14 @@
 # -*- coding:utf-8 -*-
 # @author  : East
 # @time    : 2019/7/12 17:04
-# @file    : fempy/fem1d/fem_1d.py
+# @file    : fempy/fem1d/fem1d.py
 # @project : fempy
 # software : PyCharm
 
-import numpy as np
+from itertools import product
 from scipy.integrate import quad
-from fempy.basic import fslove
-from fempy.fem1d.fem_1d_plot import plot_1d
-
-
-def phi_l(l, r):
-    """
-    Left $\phi$ function
-    :param l:
-    :param r:
-    :return:
-    """
-    return lambda x: (x - r) / (l - r)
-
-
-def phi_r(l, r):
-    """
-    Right $\phi$ function
-    :param l:
-    :param r:
-    :return:
-    """
-    return lambda x: (x - l) / (r - l)
-
-
-def phi_l_d1(l, r):
-    """
-    The first erivation of left $\phi$
-    :param l:
-    :param r:
-    :return:
-    """
-    return lambda x: 1 / (l - r)
-
-
-def phi_r_d1(l, r):
-    """
-    The first erivation of right $\phi$
-    :param l:
-    :param r:
-    :return:
-    """
-    return lambda x: 1 / (r - l)
-
-
-def inner_product_1d(f0, f1, a, b):
-    """
-    Inner product of 2 function
-    $$\int^b_a f_1(x)f_2(x) \mathrm{d}x$$
-    :param f0:
-    :param f1:
-    :param a:
-    :param b:
-    :return:
-    """
-    inner_solve = quad(lambda x: f0(x) * f1(x), a, b)
-    return inner_solve[0]
+from fempy.basic import fslove, Gaussian
+from .basic import *
 
 
 class FEM1D(object):
@@ -71,36 +17,31 @@ class FEM1D(object):
         self.f = eq['f']
         self.bnd = eq['bnd']
         self.mesh = mesh
+        self.temp = Gaussian('1', 3)
+        self.g_p = self.temp.gauss_p
+        self.g_w = self.temp.gauss_w
+        self.g_a = self.temp.gauss_a
         self.a_mat = np.zeros((self.mesh.p_n, self.mesh.p_n))
         self.f_lst = np.zeros(self.mesh.p_n)
         self.u_lst = np.zeros(self.mesh.p_n)
 
-    def assembly_f(self):
-        """
-        组装矩阵 $F$
-        """
+    def assembly_af(self):
         for k, v in enumerate(self.mesh.e_mat):
-            l_inx, r_inx = v
-            l_cor, r_cor = self.mesh.p_mat[[l_inx, r_inx]]
-            self.f_lst[l_inx] += inner_product_1d(self.f, phi_l(l_cor, r_cor), l_cor, r_cor)
-            self.f_lst[r_inx] += inner_product_1d(self.f, phi_r(l_cor, r_cor), l_cor, r_cor)
+            a_ind = np.array(list(product(v, repeat=2))).T
+            a_elem, f_elem = self.construct_af(self.mesh.p_mat[v])
+            self.f_lst[v] += f_elem
+            self.a_mat[a_ind] += a_elem
 
-    def assembly_a(self):
-        """
-        组装矩阵 $A$
-        """
-        for k, v in enumerate(self.mesh.e_mat):
-            l_inx, r_inx = v
-            l_cor, r_cor = self.mesh.p_mat[[l_inx, r_inx]]
-            # TODO: package other forms function
-            self.a_mat[l_inx][l_inx] += inner_product_1d(phi_l_d1(l_cor, r_cor),
-                                                         phi_l_d1(l_cor, r_cor), l_cor, r_cor)
-            self.a_mat[l_inx][r_inx] += inner_product_1d(phi_r_d1(l_cor, r_cor),
-                                                         phi_l_d1(l_cor, r_cor), l_cor, r_cor)
-            self.a_mat[r_inx][l_inx] += inner_product_1d(phi_l_d1(l_cor, r_cor),
-                                                         phi_r_d1(l_cor, r_cor), l_cor, r_cor)
-            self.a_mat[r_inx][r_inx] += inner_product_1d(phi_r_d1(l_cor, r_cor),
-                                                         phi_r_d1(l_cor, r_cor), l_cor, r_cor)
+    def construct_af(self, unit_v):
+        f_elem = np.zeros(2)
+        a_elem = np.zeros((2, 2))
+        gauss_global_p = local_to_global(self.g_p, unit_v)
+        gauss_global_w = (unit_v[1] - unit_v[0]) / self.g_a * self.g_w
+        basis_v = basis_value(gauss_global_p, unit_v)
+        basis_g = basis_grid(gauss_global_p, unit_v)
+        f_elem += np.dot(self.f(gauss_global_p), basis_v.T) * gauss_global_w
+        a_elem += np.dot(basis_g, basis_g.T) * np.sum(gauss_global_w)
+        return a_elem, f_elem
 
     def singular_condition(self):
         """
@@ -111,9 +52,7 @@ class FEM1D(object):
         print(f'> p_end: {p_end}')
         self.f_lst[p_end] = self.bnd
         self.a_mat[p_end, :] = 0
-        # self.a_mat[:, p_end] = 0
         self.a_mat[p_end, p_end] = 1
-        # self.f_lst[[1, -2]] -= self.a_mat[[1, -2], [0, -1]] * self.bnd
 
     def error_l2(self, u_true):
         """
@@ -121,22 +60,23 @@ class FEM1D(object):
         :param u_true:
         :return:
         """
-        e2 = 0
-        for k, v in enumerate(self.mesh.e_mat):
-            l_inx, r_inx = v
-            l_cor, r_cor = self.mesh.p_mat[v]
-            e2 += quad(lambda x: (u_true(x) - self.u_lst[l_inx] * phi_l(l_cor, r_cor)(x)
-                                  - self.u_lst[r_inx] * phi_r(l_cor, r_cor)(x)) ** 2, l_cor, r_cor)[0]
-        return np.sqrt(e2)
+        error2 = 0
+        for k, v in enumerate(self.mesh.u_mat):
+            unit_v = self.mesh.p_mat[v]
+            gauss_global_p = local_to_global(self.g_p, unit_v)
+            gauss_global_w = (unit_v[1] - unit_v[0]) / self.g_a * self.g_w
+            basis_v = basis_value(gauss_global_p, unit_v)
+            value_true = u_true(*gauss_global_p.T)
+            value_calc = np.dot(self.u_lst[v], basis_v)
+            error2 += np.sum((value_true - value_calc) ** 2 * gauss_global_w)
+        return np.sqrt(error2)
 
     def run(self):
         """
         2 Dimension Finite Element Method.
         """
-        print("> Assembly Matrix F...")
-        self.assembly_f()
-        print("> Assembly Matrix A...")
-        self.assembly_a()
+        print("> Assembly Matrix A and F...")
+        self.assembly_af()
         print(f'> a_mat0:\n{self.a_mat}\n> f_lst0:\n{self.f_lst}')
         print("> Apply Boundary Conditions...")
         self.singular_condition()
@@ -156,7 +96,7 @@ class Adaptive1D(object):
         self.fem.run()
         print('> u_h:', self.fem.u_lst)
         # print('> el2:', self.fem.error_l2(self.eq['u_true']))
-        plot_1d(self.fem.u_lst, self.mesh, self.eq['u_true'], 'start plot')
+        # plot_1d(self.fem.u_lst, self.mesh, self.eq['u_true'], 'start plot')
 
     def fem_iter(self, n=1):
         for i in range(n):
@@ -169,7 +109,7 @@ class Adaptive1D(object):
             self.fem.run()
             print('> u_h:', self.fem.u_lst)
             # print('> el2:', self.fem.error_l2(self.eq['u_true']))
-            plot_1d(self.fem.u_lst, self.mesh, self.eq['u_true'], str(i+1)+"'st Split")
+            # plot_1d(self.fem.u_lst, self.mesh, self.eq['u_true'], str(i+1)+"'st Split")
 
     def estimate_error(self):
         eta_h = np.zeros(self.mesh.e_n)

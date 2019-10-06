@@ -1,8 +1,10 @@
 #!/usr/bin/python
 # -*- coding:utf-8 -*-
 # @author  : East
-# @time    : 2019/7/12 17:32
+# @time    : 2019/9/28 14:13
 # @file    : __init__.py.py
-# @project : fempy
+# @project : fem
 # software : PyCharm
 
+from .mesh_1d import *
+from .mesh_2d import *

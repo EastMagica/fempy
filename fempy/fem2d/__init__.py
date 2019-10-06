@@ -6,6 +6,5 @@
 # @project : fempy
 # software : PyCharm
 
-from fempy.fem2d.fem_2d import *
-from fempy.fem2d.mesh_2d import *
-from fempy.fem2d.fem_2d_plot import *
+from .basic import *
+from .fem2d import *

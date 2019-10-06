@@ -2,7 +2,7 @@
 # -*- coding:utf-8 -*-
 # @author  : East
 # @time    : 2019/7/21 22:02
-# @file    : fem_1d_plot.py
+# @file    : plot1d.py
 # @project : fem
 # software : PyCharm
 
