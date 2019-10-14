@@ -6,82 +6,19 @@
 # @project : fempy
 # software : PyCharm
 
-from itertools import product
-from fempy.basic import fslove, Gaussian
-from .basic import *
+import types
+import numpy as np
+from fempy.basic import FEM
+from .basic import Gaussian, area
 
 
-class FEM2D(object):
-    def __init__(self, eq, mesh):
-        self.eq = eq
-        self.f = eq['f']
-        print("> Constructing triangle mesh...")
-        self.mesh = mesh
-        print('> point:', self.mesh.p_n, ', edge:', self.mesh.e_n, ', tri:', self.mesh.u_n)
-        print("> Load Gauss point...")
-        self.temp = Gaussian('2', 3)
-        self.g_p = self.temp.gauss_p
-        self.g_w = self.temp.gauss_w
-        self.g_a = self.temp.gauss_a
-        print("> Init Matrix A, F, U...")
-        self.u_lst = np.zeros(self.mesh.p_n)
-        self.f_lst = np.zeros(self.mesh.p_n)
-        self.a_mat = np.zeros((self.mesh.p_n, self.mesh.p_n))
+class FEM2D(FEM):
+    def __init__(self, variation, mesh):
+        super().__init__(variation, mesh)
+        self.gaussian = Gaussian(6, self.mesh.ndim)
+        print('> points:', self.mesh.npoints, ', units:', self.mesh.nsimplices)
 
-    def assembly_af(self):
-        r"""组装总矩阵
-
-        Returns
-        -------
-
-        """
-        for k, v in enumerate(self.mesh.u_mat):
-            # constructing temporary matrix b and f
-            a_ind = np.array(list(product(v, repeat=2))).T
-            b_mat, f_mat = self.construct_af(self.mesh.p_mat[v])
-            self.f_lst[v] += f_mat
-            self.a_mat[a_ind[0], a_ind[1]] += b_mat.flatten()
-
-    def construct_af(self, unit_v):
-        r"""构造单元矩阵
-
-        .. math::
-            \iint_K f\cdot v\mathrm{d}x\mathrm{d}y =
-            \sum_{i=1}^n f(p_i) \cdot \phi(p_i) w_i =
-            (f, \phi_i)
-
-         .. math::
-            \iint_K \nabla u\cdot\nabla v\mathrm{d}x\mathrm{d}y =
-            \sum_{i=1}^n (\nabla u(p_i), \nabla u(p_i)) u_j
-
-        Parameters
-        ----------
-        unit_v : array_like, (3, 2)
-            三角单元顶点坐标.
-
-        Returns
-        -------
-        a_elem : ndarray, (3, 3)
-            单元刚度矩阵.
-        f_elem : ndarray, (3, )
-            单元载荷矩阵.
-
-        Note
-        ----
-        此处:math:`A_i`的计算方法只针对
-        右端项为:math:`\Delta u`的情形.
-        """
-        f_elem = np.zeros(3)
-        a_elem = np.zeros((3, 3))
-        gauss_global_p = local_to_global(self.g_p, unit_v)
-        gauss_global_w = area(*unit_v) / self.g_a * self.g_w
-        basis_v = basis_value(gauss_global_p, unit_v)
-        basis_g = basis_grid(gauss_global_p, unit_v)
-        f_elem += np.dot(self.f(*gauss_global_p.T), basis_v.T) * gauss_global_w
-        a_elem += np.dot(basis_g, basis_g.T) * np.sum(gauss_global_w)
-        return a_elem, f_elem
-
-    def singular_condition(self):
+    def boundary(self):
         r"""边界条件
 
         Returns
@@ -91,41 +28,71 @@ class FEM2D(object):
         ----
         此处边界条件仅为第一类(Dirichlet)边界条件.
         """
-        for k, v in enumerate(self.mesh.p_bnd):
-            if v:
-                self.f_lst[k] = 0
-                self.a_mat[k] = 0
-                self.a_mat[k, k] = 1
+        bnd = self.mesh.boundary
+        self.f_lst[bnd] = 0
+        self.a_mat[:, bnd] = 0
+        self.a_mat[bnd, :] = 0
+        self.a_mat[bnd, bnd] = 1
 
-    def error_l2(self, u_true):
-        r"""计算L2误差
+    @staticmethod
+    def basis_value(p, v):
+        r"""单元基函数.
+
+        由单元基函数的定义, 可以得到单元基函数在点:math:`p`处取值.
+
+        .. math::
+            \varphi_1 = \frac{\Delta_{p23}}{\Delta} \\
+            \varphi_2 = \frac{\Delta_{p31}}{\Delta} \\
+            \varphi_3 = \frac{\Delta_{p12}}{\Delta} \\
+
+        Parameters
+        ----------
+        p : array_like, (N, 2)
+        v : array_like, (3, 2)
 
         Returns
         -------
+        basis_v : ndarray, (N, 3)
+        """
+        area_v = area(v[0], v[1], v[2])
+        basis_v = np.array([area(p, v[1], v[2]), area(p, v[2], v[0]), area(p, v[0], v[1])]) / area_v
+        return basis_v.T
+
+    @staticmethod
+    def basis_grid(p, v):
+        r"""单元基函数的导数.
+
+        由单元基函数的定义, 可以得到单元基函数的导数,
+        且三角单元基函数的导数为常数.
+
+        .. math::
+            \nabla \varphi_1 =
+                \left[\begin{matrix}
+                (y_2 - y_3) / \Delta \\ (x_3 - x_2) / 2\Delta
+                \end{matrix}\right],\quad
+            \nabla \varphi_1 =
+                \left[\begin{matrix}
+                (y_3 - y_1) / \Delta \\ (x_1 - x_3) / 2\Delta
+                \end{matrix}\right],\quad
+            \nabla \varphi_1 =
+                \left[\begin{matrix}
+                (y_1 - y_2) / \Delta \\ (x_2 - x_1) / 2\Delta
+                \end{matrix}\right]
+
+        Parameters
+        ----------
+        p : array_like, (3, 2)
+        v : array_like, (N, 2)
+
+        Returns
+        -------
+        basis_g : ndarray, (2, 3)
 
         """
-        error2 = 0
-        for k, v in enumerate(self.mesh.u_mat):
-            u_p = self.mesh.p_mat[v]
-            gauss_global_p = local_to_global(self.g_p, u_p)
-            gauss_global_w = area(*u_p) / self.g_a * self.g_w
-            basis_v = basis_value(gauss_global_p, u_p)
-            value_true = u_true(*gauss_global_p.T)
-            value_calc = np.dot(self.u_lst[v], basis_v)
-            error2 += np.sum((value_true - value_calc)**2 * gauss_global_w)
-        return np.sqrt(error2)
-
-    def run(self):
-        """
-        2 Dimension Finite Element Method.
-        """
-        print("> Assembly Matrix F...")
-        # self.assembly_f()
-        print("> Assembly Matrix A...")
-        self.assembly_af()
-        print("> Apply Boundary Conditions...")
-        self.singular_condition()
-        print("> Solve Matrix U...")
-        self.u_lst = fslove(self.a_mat, self.f_lst)
-
+        area_v = area(v[0], v[1], v[2])
+        # TODO: Fix Bug, commmit to BLog
+        basis_g = np.array([v[[1, 2, 0], 1] - v[[2, 0, 1], 1],
+                            v[[2, 0, 1], 0] - v[[1, 2, 0], 0]])
+        basis_g = basis_g / 2 / area_v
+        return basis_g
 

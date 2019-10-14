@@ -2,7 +2,7 @@
 # -*- coding:utf-8 -*-
 # @author  : East
 # @time    : 2019/7/21 16:24
-# @file    : test_1d_02.py
+# @file    : 03.1d_adaptive.py
 # @project : fempy
 # software : PyCharm
 

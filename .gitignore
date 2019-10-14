@@ -1,10 +1,6 @@
 /docs/
 /.idea/
-/.idea/dictionaries/
-/.idea/encodings.xml
-/.idea/fem.iml
-/.idea/misc.xml
-/.idea/modules.xml
-/.idea/other.xml
-/.idea/vcs.xml
-/.idea/workspace.xml
+/fempy/__pycache__/
+/fempy/fem1d/__pycache__/
+/fempy/fem2d/__pycache__/
+/examples/drafts/

@@ -8,7 +8,7 @@
 
 import os
 import numpy as np
-from fempy.basic import _is_ndarray
+from fempy.basic import _is_ndarray, GaussianTemp
 
 pnt = np.array([[0, 0], [1, 0], [0, 1]])
 
@@ -73,7 +73,7 @@ def area(*points):
 
     Parameters
     ----------
-    points : array_like (N, 3, 2)
+    points : list, array_like, [(N, 2), (2, ), (2, )]
         三角单元顶点坐标.
 
     Returns
@@ -87,48 +87,10 @@ def area(*points):
     直接计算, 无需为对应参数而拆开数组.
 
     """
-    [p0, p1, p2] = _is_ndarray(points)
-    if (p0.shape[1] != 2) or (p1.shape[1] != 2) or (p2.shape[1] != 2):
-        raise ValueError('Input a needs to be a (N, 2) Matrix.')
-    elif p0.shape[0] != p1.shape[0] != p2.shape[0]:
-        raise ValueError('Input matrices need to have same raw.')
+    [p0, p1, p2] = _is_ndarray(*points)
+    p0 = p0.T if p0.ndim == 2 else p0
     s = ((p1[0] - p0[0]) * (p2[1] - p0[1]) - (p1[1] - p0[1]) * (p2[0] - p0[0])) / 2
     return s
-
-
-def local_to_global(local_p, global_v):
-    r"""
-    局部(Local)坐标变换到全局(Global)坐标.
-
-    .. math::
-        \vec{x} = X \vec{\lambda} \\
-        \left[\begin{matrix}
-            x \\ y \\ 1 \\
-        \end{matrix}\right] =
-        \left[\begin{matrix}
-            x_1 & x_2 & x_3 \\
-            y_1 & y_2 & y_3 \\
-            1   & 1   & 1   \\
-        \end{matrix}\right]
-        \left[\begin{matrix}
-            \lambda_1 \\ \lambda_2 \\ \lambda_3 \\
-        \end{matrix}\right]
-
-    Parameters
-    ----------
-    local_p  : array_like, (N, 2)
-        局部坐标中的点坐标.
-    global_v : array_like, (3, 2)
-        全局坐标中的三角形顶点坐标.
-
-    Returns
-    -------
-    point_e
-        Local Point in Global Area
-    """
-    local_pex = extend_points(local_p, 'natural', axis=0)
-    global_p = np.dot(global_v.transpose(), local_pex)
-    return global_p
 
 
 def global_to_local(global_p, global_v):
@@ -167,99 +129,21 @@ def global_to_local(global_p, global_v):
     return local_p
 
 
-def basis_value(p, v):
-    r"""单元基函数.
-
-    由单元基函数的定义, 可以得到单元基函数在点:math:`p`处取值.
-
-    .. math::
-        \varphi_1 = \frac{\Delta_{p23}}{\Delta} \\
-        \varphi_2 = \frac{\Delta_{p31}}{\Delta} \\
-        \varphi_3 = \frac{\Delta_{p12}}{\Delta} \\
-
-    Parameters
-    ----------
-    p
-    v
-
-    Returns
-    -------
-
-    """
-    area_v = area(v[0], v[1], v[2])
-    val = np.array([area(p, v[1], v[2]),
-                    area(p, v[2], v[0]),
-                    area(p, v[0], v[1])]) / area_v
-    return val
-
-
-def basis_grid(p, v):
-    r"""单元基函数的导数.
-
-    由单元基函数的定义, 可以得到单元基函数的导数,
-    且三角单元基函数的导数为常数.
-
-    .. math::
-        \nabla \varphi_1 =
-            \left[\begin{matrix}
-            (y_2 - y_3) / \Delta \\ (x_3 - x_2) / \Delta
-            \end{matrix}\right],\quad
-        \nabla \varphi_1 =
-            \left[\begin{matrix}
-            (y_3 - y_1) / \Delta \\ (x_1 - x_3) / \Delta
-            \end{matrix}\right],\quad
-        \nabla \varphi_1 =
-            \left[\begin{matrix}
-            (y_1 - y_2) / \Delta \\ (x_2 - x_1) / \Delta
-            \end{matrix}\right]
-
-    Parameters
-    ----------
-    p
-    v
-
-    Returns
-    -------
-
-    """
-    area_v = area(v[0], v[1], v[2])
-    val = np.array([[v[1, 1] - v[2, 1], v[2, 0] - v[1, 0]],
-                    [v[2, 1] - v[0, 1], v[0, 0] - v[2, 0]],
-                    [v[0, 1] - v[1, 1], v[1, 0] - v[0, 0]]]) / area_v
-    return val
-
-
-class GaussQuad(object):
-    # gauss_temp = TempElement(3)
-
-    @staticmethod
-    def gauss(n):
-        r"""更改静态变量Gauss模板"""
-        GaussQuad.gauss_temp = TempElement(n)
-
-    @staticmethod
-    def triquad(tri, *f):
-        r"""三角单元上的Gauss求积.
-
-        .. math::
-            \iint_{\Delta}f(x,y)dS=\sum_{i=1}^nf(x_i)w_i
+class Gaussian(GaussianTemp):
+    def local_to_global(self, global_v):
+        """
 
         Parameters
         ----------
-        f   : function
-            被积函数(integrand).
-        tri : array_like, (3, 2)
-            三角单元顶点坐标.
+        self
+        global_v : ndarray, (3, 2)
 
         Returns
         -------
-        gauss_quad : float
-            Gauss求积结果.
+        global_p : ndarray, (3, 2)
+        global_w : ndarray, (3,  )
         """
-        gauss = GaussQuad.gauss_temp
-        gauss_local_p = gauss.gauss_point()
-        gauss_local_w = gauss.gauss_weight()
-        gauss_global_p = local_to_global(gauss_local_p, tri)
-        gauss_global_w = area(*tri) / gauss.get_area() * gauss_local_w
-        gauss_quad = np.sum(f(gauss_global_p) * gauss_global_w)
-        return gauss_quad
+        local_ex = extend_points(self.points, 'natural', axis=0)
+        global_p = np.transpose(np.dot(global_v.T, local_ex))
+        global_w = area(*global_v) / self.area * self.weight
+        return global_p, global_w

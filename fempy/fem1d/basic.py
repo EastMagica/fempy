@@ -7,48 +7,21 @@
 # software : PyCharm
 
 import numpy as np
+from fempy.basic import _is_ndarray, GaussianTemp
 
 
-def basis_value(p, v):
-    """
-
-    Parameters
-    ----------
-    p
-    v
-
-    Returns
-    -------
-
-    """
-    return np.array([p - v[1], v[0] - p]) / (v[0] - v[1])
+def area(*points):
+    [pl, pr] = _is_ndarray(points)
+    if (pl.ndim > 1) or (pr.ndim > 1):
+        raise ValueError('Input a needs to be a (N, 1) Matrix.')
+    elif pl.size != pr.size:
+        raise ValueError('Input matrices need to have same raw.')
+    return pr - pl
 
 
-def basis_grid(p, v):
-    """
+class Gaussian(GaussianTemp):
+    def local_to_global(self, global_v):
+        global_p = self.points * (global_v[1] - global_v[0]) + global_v[0]
+        global_w = area(*global_v) / self.area * self.weight
+        return global_p, global_w
 
-    Parameters
-    ----------
-    p
-    v
-
-    Returns
-    -------
-
-    """
-    return np.tile([[1], [-1]], (1, p.shape[0])) / (v[0] - v[1])
-
-
-def local_to_global(local_p, global_v):
-    """
-
-    Parameters
-    ----------
-    local_p : array_like, (N, )
-    global_v : array_like, (2, )
-
-    Returns
-    -------
-
-    """
-    return local_p * (global_v[1] - global_v[0]) + global_v[0]
