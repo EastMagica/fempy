@@ -23,6 +23,8 @@ A simple example of 1D Laplace equation.
 and the exact solution is :math:`u = \sin(\pi x)`.
 """
 
+__test_name__ = '01.1d_laplace'
+
 
 def f(x):
     return np.pi ** 2 * np.sin(np.pi * x)
@@ -51,7 +53,7 @@ u_error_l2 = fem.error_l2(u_true)
 print('> Solution U=\n', fem.u_lst)
 print('> L2Error =', fem.error_l2(u_true))
 
-# fem.save_data(file_name='02.2d_laplace', form='npy')
+fem.save_data(file_name='01.1d_laplace', form='npy')
 
 # plt.style.use('grayscale')
 fig = plt.figure(figsize=(12, 5))
@@ -65,4 +67,5 @@ ax1 = plt.subplot(1, 2, 2)
 plt.title('error')
 plt.plot(fem.mesh.points, np.sin(np.pi * fem.mesh.points) - fem.u_lst)
 plt.tight_layout()
-plt.show()
+
+plt.savefig(__test_name__ + '.png', dpi=200)

@@ -184,7 +184,7 @@ fem.run()
 # print and save solution
 # -----------------------
 
-# fem.save_data(file_name='02.2d_laplace\data', form='npy')
+fem.save_data(file_name='02.2d_laplace', form='npy')
 
 # print('> Matrix A=\n', fem.a_mat)
 # print('> Matrix F=\n', fem.f_lst)
@@ -223,5 +223,5 @@ axs[3].set_aspect('equal')
 tcf = tri_contour(axs[3], mtri, z, levels=10, cmap=cm)
 fig.colorbar(tcf, ax=axs[3])
 
-# plt.savefig(__test_name__ + 'png', dpi=200)
-plt.show()
+plt.savefig(__test_name__ + '.png', dpi=200)
+# plt.show()
